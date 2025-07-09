@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAppContext } from "../../context/AppContext";
 import { menuTypeAPI } from "../../services/api";
+import { cmsPageAPI } from "../../services/api";
 import toast from "react-hot-toast";
 import Button from "../UI/Button";
 import { Plus, Edit, Trash2 } from "lucide-react";
@@ -16,6 +17,10 @@ const AllMenuTypes = () => {
 
   useEffect(() => {
     fetchMenuTypes();
+    // Fetch all pages if not already loaded
+    if (!state.pages || state.pages.length === 0) {
+      fetchAllPages();
+    }
   }, []);
 
   const fetchMenuTypes = async () => {
@@ -27,6 +32,16 @@ const AllMenuTypes = () => {
       toast.error("Failed to fetch menu types");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllPages = async () => {
+    try {
+      // Fetch all pages with a high limit to get all at once
+      const response = await cmsPageAPI.getAll({ page: 1, limit: 1000 });
+      actions.setPages(response.data);
+    } catch (error) {
+      // Optionally show a toast or log error
     }
   };
 
@@ -162,7 +177,12 @@ const AllMenuTypes = () => {
                     {menuType.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    0
+                    {state.pages.filter(
+                      (page) =>
+                        (typeof page.menuType === "object"
+                          ? page.menuType._id
+                          : page.menuType) === menuType._id
+                    ).length}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex space-x-2">
