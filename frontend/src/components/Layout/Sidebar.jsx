@@ -40,7 +40,7 @@ const Sidebar = () => {
       title: "Menu Types",
       icon: Menu,
       path: "/menu-types",
-      disabled: true,
+      disabled: false,
     },
     {
       title: "Footer Links",

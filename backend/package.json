@@ -15,7 +15,8 @@
     "helmet": "^7.0.0",
     "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
-    "multer": "^2.0.1"
+    "multer": "^2.0.1",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -3,6 +3,18 @@ const { validationResult } = require("express-validator");
 const path = require("path");
 const fs = require("fs");
 
+function logError(context, error, req) {
+  console.error(`--- ERROR in ${context} ---`);
+  console.error('Message:', error.message);
+  if (error.stack) console.error('Stack:', error.stack);
+  if (req) {
+    if (req.body && Object.keys(req.body).length) console.error('Request Body:', req.body);
+    if (req.params && Object.keys(req.params).length) console.error('Request Params:', req.params);
+    if (req.query && Object.keys(req.query).length) console.error('Request Query:', req.query);
+  }
+  console.error('--------------------------');
+}
+
 // Get all CMS pages
 const getAllPages = async (req, res) => {
   try {
@@ -54,10 +66,10 @@ const getAllPages = async (req, res) => {
       },
     });
   } catch (error) {
+    logError('getAllPages', error, req);
     res.status(500).json({
       success: false,
-      message: "Error fetching pages",
-      error: error.message,
+      message: "Internal server error.",
     });
   }
 };
@@ -81,10 +93,10 @@ const getPageById = async (req, res) => {                //To fetch a single CMS
       data: page,                    // the actual page data
     });
   } catch (error) {
+    logError('getPageById', error, req);
     res.status(500).json({
       success: false,
-      message: "Error fetching page",
-      error: error.message,
+      message: "Internal server error.",
     });
   }
 };
@@ -99,6 +111,11 @@ const createPage = async (req, res) => {                //This function is used 
         message: "Validation errors",
         errors: errors.array(),
       });
+    }
+
+    // Sanitize parentId
+    if (req.body.parentId === "") {
+      req.body.parentId = null;
     }
 
     // Set the highest order ID + 1
@@ -156,11 +173,10 @@ const createPage = async (req, res) => {                //This function is used 
         message: "Slug already exists. Please choose a different slug.",
       });
     }
-
+    logError('createPage', error, req);
     res.status(500).json({
       success: false,
-      message: "Error creating page",
-      error: error.message,
+      message: "Internal server error.",
     });
   }
 };
@@ -175,6 +191,11 @@ const updatePage = async (req, res) => {
         message: "Validation errors",
         errors: errors.array(),
       });
+    }
+
+    // Sanitize parentId
+    if (req.body.parentId === "") {
+      req.body.parentId = null;
     }
 
     const existingPage = await CMSPage.findById(req.params.id);
@@ -241,11 +262,10 @@ const updatePage = async (req, res) => {
         message: "Slug already exists. Please choose a different slug.",
       });
     }
-
+    logError('updatePage', error, req);
     res.status(500).json({
       success: false,
-      message: "Error updating page",
-      error: error.message,
+      message: "Internal server error.",
     });
   }
 };
@@ -276,10 +296,10 @@ const deletePage = async (req, res) => {
       message: "Page deleted successfully",
     });
   } catch (error) {
+    logError('deletePage', error, req);
     res.status(500).json({
       success: false,
-      message: "Error deleting page",
-      error: error.message,
+      message: "Internal server error.",
     });
   }
 };
@@ -310,10 +330,10 @@ const togglePageStatus = async (req, res) => {             //This function toggl
       data: updatedPage,
     });
   } catch (error) {
+    logError('togglePageStatus', error, req);
     res.status(500).json({
       success: false,
-      message: "Error updating page status",
-      error: error.message,
+      message: "Internal server error.",
     });
   }
 };
@@ -330,10 +350,10 @@ const getPagesForDropdown = async (req, res) => {
       data: pages,
     });
   } catch (error) {
+    logError('getPagesForDropdown', error, req);
     res.status(500).json({
       success: false,
-      message: "Error fetching pages for dropdown",
-      error: error.message,
+      message: "Internal server error.",
     });
   }
 };
@@ -369,10 +389,10 @@ const serveFile = async (req, res) => {
     fileStream.pipe(res);                                   //Sends it to the browser without loading the whole file into memory.
 
   } catch (error) {
+    logError('serveFile', error, req);
     res.status(500).json({
       success: false,
-      message: "Error serving file",
-      error: error.message,
+      message: "Internal server error.",
     });
   }
 };
@@ -389,3 +409,4 @@ module.exports = {
 };
 
 // for line no. 361 & 362 -> fileStream is reading the file in chunks.res (the response object) is a writable stream (i.e., it sends data to the browser)&.pipe() sends chunks of data from the file stream directly to the response stream, without loading the entire file into memory.
+// for line no. 369 -> .pipe() is a way to stream data from one source to another in real time, without waiting to load the full content in memory.
