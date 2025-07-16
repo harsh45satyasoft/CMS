@@ -20,9 +20,9 @@ app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Swagger setup
-const swaggerDocument = JSON.parse(fs.readFileSync("./swagger.json", "utf8"));
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Swagger setup, Load your API documentation from a swagger.json file. Serve an interactive UI at /api-docs
+const swaggerDocument = JSON.parse(fs.readFileSync("./swagger.json", "utf8"));   //fs.readFileSync("./swagger.json", "utf8") Reads the contents of the file named swagger.json from the root folder. "utf8" ensures it's read as a text string (not a buffer). Converts the Swagger JSON string into a JavaScript object so it can be used in your app.
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));         //Mounts Swagger UI middleware at the route: /api-docs, swaggerUi.serve: Middleware that serves required static files (HTML, CSS, JS) for Swagger UI, swaggerUi.setup(swaggerDocument): Initializes Swagger UI with your loaded Swagger JSON (swaggerDocument)
 
 // Database connection
 mongoose

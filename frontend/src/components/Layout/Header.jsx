@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";   //useLocation() is a hook provided by React Router to access information about the current URL (or route) in your app.
 import { Bell, User } from "lucide-react";
 
 const Header = () => {

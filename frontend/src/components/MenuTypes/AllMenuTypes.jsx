@@ -18,10 +18,10 @@ const AllMenuTypes = () => {
   useEffect(() => {
     fetchMenuTypes();
     // Fetch all pages if not already loaded
-    if (!state.pages || state.pages.length === 0) {
+    if (!state.pages || state.pages.length === 0) {    //Checks if state.pages is undefined, null, or an empty array. If so, it calls fetchAllPages() to load them.
       fetchAllPages();
     }
-  }, []);
+  }, []);                                              //[] Dependency Array: This ensures the effect runs only once (on mount), just like componentDidMount in class components. 
 
   const fetchMenuTypes = async () => {
     try {

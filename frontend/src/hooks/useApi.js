@@ -7,33 +7,33 @@ export const useApi = (apiFunction, dependencies = []) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  useEffect(() => {                               //This runs when the component mounts or when any dependency changes (you pass them in the dependencies array).
+    let isMounted = true;                         //Local flag to track if the component is still on the screen. Helps avoid updating state after the component is gone (unmounted).
 
-    const fetchData = async () => {
+    const fetchData = async () => {               //You define an async function that: Calls the API, Updates the UI with data, Handles loading and error states
       try {
-        setLoading(true);
-        setError(null);
-        const response = await apiFunction();
+        setLoading(true);                         // 🔄 Start loader/spinner
+        setError(null);                           // Reset errors
+        const response = await apiFunction();     // Wait for API call
 
         if (isMounted) {
-          setData(response);
+          setData(response);                      // ✅ Only update state if still mounted
         }
       } catch (err) {
         if (isMounted) {
-          setError(err);
+          setError(err);                         // Show error only if mounted
         }
       } finally {
         if (isMounted) {
-          setLoading(false);
+          setLoading(false);                    // Stop loading spinner
         }
       }
     };
 
-    fetchData();
+    fetchData();                               // Call it immediately after effect starts
 
     return () => {
-      isMounted = false;
+      isMounted = false;                       //This is the cleanup function. It runs when the component unmounts, or before the next effect runs again. This sets isMounted = false, which tells fetchData() not to update state anymore.
     };
   }, dependencies);
 
@@ -42,7 +42,7 @@ export const useApi = (apiFunction, dependencies = []) => {
       setLoading(true);
       setError(null);
       const response = await apiFunction();
-      setData(response);
+      setData(response);   // 🔁 No isMounted check here because this is manual and user-initiated
     } catch (err) {
       setError(err);
     } finally {
@@ -65,17 +65,18 @@ export const usePaginatedApi = (apiFunction, initialParams = {}) => {
       setLoading(true);
       setError(null);
 
-      const response = await apiFunction({
-        ...initialParams,
-        ...params,
-        page: state.pagination.current,
-        limit: state.pagination.limit,
-        ...state.filters,
+      //You're making an API call using an apiFunction, and you're passing in a set of merged parameters for filtering, pagination, and defaults.
+      const response = await apiFunction({        //You're calling an async API function, and await waits for the response before continuing.
+        ...initialParams,                         //This spreads default parameters first. Example: { sort: "createdAt", order: "desc" }
+        ...params,                                //Then it overrides or adds more specific parameters passed at the time of function call. Example: If someone called refetch({ sort: "title" }), this will override sort.
+        page: state.pagination.current,           //It includes the current page number from your app state.
+        limit: state.pagination.limit,            //It includes the limit from your app state.
+        ...state.filters,                         //Appends search/filter values, like: menuType, isEnabled, keyword, etc.
       });
 
       if (response.success) {
-        setData(response.data);
-        actions.setPagination(response.pagination);
+        setData(response.data);                   //Saves the response data into a local state (setData)
+        actions.setPagination(response.pagination); //Updates the pagination details like current page, total pages, total records, etc.
       }
     } catch (err) {
       setError(err);
@@ -100,7 +101,7 @@ export const usePaginatedApi = (apiFunction, initialParams = {}) => {
 };
 
 // Hook for managing form submissions
-export const useApiMutation = () => {
+export const useApiMutation = () => {            //Your custom hook useApiMutation is a clean and reusable abstraction for handling asynchronous API calls in a React component. It manages loading and error states internally, which helps reduce boilerplate in components.
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 

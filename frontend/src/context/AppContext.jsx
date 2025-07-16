@@ -3,15 +3,15 @@ import React, { createContext, useContext, useReducer } from "react";
 const AppContext = createContext();
 
 const initialState = {
-  pages: [],
-  menuTypes: [],
+  pages: [],           // List of CMS pages
+  menuTypes: [],       // List of available menu types
   loading: false,
-  error: null,
-  selectedPage: null,
+  error: null,         // Holds error messages or objects
+  selectedPage: null,  // Currently viewed or edited page
   filters: {
     search: "",
     menuType: "",
-    enabled: "",
+    enabled: null,     // or true/false
   },
   pagination: {
     current: 1,
@@ -35,60 +35,61 @@ const actionTypes = {
   CLEAR_ERROR: "CLEAR_ERROR",
 };
 
-const appReducer = (state, action) => {
+//The reducer must return a brand‑new state object every time something changes (immutability). That’s why you see lots of spread syntax ({ …state, … })
+const appReducer = (state, action) => {              //state – the current global state held in a React Context, action – an object with at least a type key and usually a payload
   switch (action.type) {
     case actionTypes.SET_LOADING:
-      return { ...state, loading: action.payload };
+      return { ...state, loading: action.payload };  //	Turn the (loading)spinner on/off. payload is a boolean.
 
     case actionTypes.SET_ERROR:
-      return { ...state, error: action.payload, loading: false };
+      return { ...state, error: action.payload, loading: false }; //	Store an error message (and stop the spinner).
 
     case actionTypes.CLEAR_ERROR:
-      return { ...state, error: null };
+      return { ...state, error: null };              //Remove any error currently shown.
 
     case actionTypes.SET_PAGES:
-      return { ...state, pages: action.payload, loading: false };
+      return { ...state, pages: action.payload, loading: false }; //Bulk‑replace the pages list with new data (e.g. after a fetch). Also stops loading.
 
     case actionTypes.SET_MENU_TYPES:
-      return { ...state, menuTypes: action.payload };
+      return { ...state, menuTypes: action.payload }; //Replace the menuTypes array (used in dropdowns, etc.).
 
     case actionTypes.SET_SELECTED_PAGE:
-      return { ...state, selectedPage: action.payload };
+      return { ...state, selectedPage: action.payload }; //Store the page object the user is currently viewing/editing.
 
     case actionTypes.SET_FILTERS:
-      return { ...state, filters: { ...state.filters, ...action.payload } };
+      return { ...state, filters: { ...state.filters, ...action.payload } }; //Merge new filter values into the existing filters object (does not overwrite unspecified keys).
 
     case actionTypes.SET_PAGINATION:
-      return { ...state, pagination: action.payload };
+      return { ...state, pagination: action.payload };  //Replace the entire pagination object (page #, page count, etc.).
 
     case actionTypes.ADD_PAGE:
-      return { ...state, pages: [action.payload, ...state.pages] };
+      return { ...state, pages: [action.payload, ...state.pages] }; //Add a newly created page to the top of the list.
 
     case actionTypes.UPDATE_PAGE:
       return {
-        ...state,
-        pages: state.pages.map((page) =>
-          page._id === action.payload._id ? action.payload : page
+        ...state,                                                   //Keeps all the other state properties as they are (nothing else changes).
+        pages: state.pages.map((page) =>                            //Replace one page in the list and set it as selectedPage.
+          page._id === action.payload._id ? action.payload : page   //Goes through every page in the pages array. If the page._id matches the action.payload._id (the updated page), it replaces it. If not, it keeps the page unchanged.
         ),
-        selectedPage: action.payload,
+        selectedPage: action.payload,                               //Sets the updated page as the currently selected one (selectedPage).
       };
 
     case actionTypes.DELETE_PAGE:
-      return {
-        ...state,
-        pages: state.pages.filter((page) => page._id !== action.payload),
-        selectedPage: null,
+      return {                                               //Remove a page from the list and clear selectedPage if it was deleted.
+        ...state,                                            //Keeps the rest of the state unchanged (preserves things like loading, filters, etc.).
+        pages: state.pages.filter((page) => page._id !== action.payload),  //Goes through every page in the list. Keeps only the pages whose _id is not equal to the one being deleted (action.payload). This effectively removes the deleted page from the list.
+        selectedPage: null,                                  //Resets the currently selected page. It's common to clear selectedPage after deletion because the deleted page no longer exists.
       };
 
     default:
-      return state;
+      return state;                                //If an unknown action.type arrives, the default branch simply returns the unchanged state.
   }
 };
 
-export const AppProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+export const AppProvider = ({ children }) => {     //A React component that: Holds global app state (pages, loading, error, etc.), Provides a set of dispatchable actions, Uses useReducer() to manage complex state transitions, Wraps your app with <AppContext.Provider>
+  const [state, dispatch] = useReducer(appReducer, initialState); //appReducer is your reducer function. initialState is your default app state (e.g., { pages: [], loading: false, ... }). dispatch is how you update state (via action objects).
 
-  const actions = {
+  const actions = {                                //Calls dispatch() with a type and payload. Triggers a matching case in appReducer
     setLoading: (loading) =>
       dispatch({ type: actionTypes.SET_LOADING, payload: loading }),
     setError: (error) =>
@@ -111,7 +112,7 @@ export const AppProvider = ({ children }) => {
       dispatch({ type: actionTypes.DELETE_PAGE, payload: pageId }),
   };
 
-  return (
+  return (                    //Makes state and actions available to any component that uses useContext(AppContext). children means anything nested inside this provider in your app.
     <AppContext.Provider value={{ state, actions }}>
       {children}
     </AppContext.Provider>
