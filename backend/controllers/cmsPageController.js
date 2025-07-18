@@ -397,6 +397,84 @@ const serveFile = async (req, res) => {
   }
 };
 
+// Get tree-structured pages by menuType
+const getPagesByMenuType = async (req, res) => {
+  try {
+    const { menuTypeId } = req.params;                    //This line extracts menuTypeId from the request URL parameters. This means: "Give me all CMS pages for this menu type."
+    const allPages = await CMSPage.find({ menuType: menuTypeId }).sort({ orderId: 1 }); //This query fetches all CMS pages that belong to a specific menuType (e.g., Header, Footer), sorted by their orderId in ascending order.
+
+    const pageMap = {};            //This initializes an empty JavaScript object. We’ll use this to map page IDs to structured nodes for a tree structure. This structure is perfect for react-sortable-tree. Think of this like: {"64a...f1": { id: "64a...f1", title: "Home", children: [] },}
+    allPages.forEach((page) => {   //This loops through every page retrieved from the database.
+      pageMap[page._id] = {        //For each page, we build a node object with
+        id: page._id.toString(),   //unique ID for the tree
+        title: page.pageTitle,     //name to display in the UI
+        children: [],              //child nodes (sub-pages or submenus)
+      };
+    });
+
+    //Sample Result of pageMap, Assume CMSPage.find() returned 3 documents:
+    //[
+    //  { _id: "1", pageTitle: "Home", parentId: null },
+    //  { _id: "2", pageTitle: "About", parentId: "1" },
+    //  { _id: "3", pageTitle: "Contact", parentId: null }
+    //]
+    //Then pageMap becomes:
+    //{
+    //  "1": { id: "1", title: "Home", children: [] },
+    //  "2": { id: "2", title: "About", children: [] },
+    //  "3": { id: "3", title: "Contact", children: [] }
+    //}
+    
+    const tree = [];                  //This array will hold the top-level nodes (pages with no parent) — these are the root pages shown in the tree (like “Home”, “About”, “Services”).
+    allPages.forEach((page) => {    
+      const node = pageMap[page._id]; //You're grabbing the previously prepared node (from pageMap) for each CMS page.
+      if (page.parentId) {            //If the page has a parent
+        pageMap[page.parentId.toString()]?.children.push(node); //This page is a child page. It should be pushed into the children array of its parent node. Uses optional chaining (?.) to avoid errors if the parent isn’t found (good safety check).
+      } else {
+        tree.push(node);              //This page is a top-level/root page, so it's added directly to the tree
+      }
+    });
+
+    res.json(tree);                  //Now you're returning the fully built nested structure — perfect for frontend tools like react-sortable-tree.
+  } catch (err) {
+    logError("getPagesByMenuType", err, req);
+    res.status(500).json({ message: "Failed to get tree pages" });
+  }
+};
+
+// Save reordered structure, this backend code handles saving the new order of CMS pages (including their parent-child hierarchy) after you've dragged and dropped pages
+const reorderCMSPages = async (req, res) => {
+  try {
+    const { tree } = req.body;                   //Receives a tree from the frontend
+    if (!tree) return res.status(400).json({ message: "Missing tree" }); //If not provided, it returns an error.
+
+    const updates = [];                          //We'll collect update operations (for MongoDB) into this array.
+
+    const traverse = (nodes, parentId = null) => { //Recursive function to walk through the tree: nodes = array of current nodes (can be root-level or child nodes). parentId is the ID of the parent node (null if root). index gives the position of the node among siblings (used for orderId)
+      nodes.forEach((node, index) => {
+        updates.push({                             //Push an update operation for each node: Update its parentId and orderId in MongoDB. We use updateOne (for use with bulkWrite). orderId = index + 1 ensures ordering starts from 1.
+          updateOne: {
+            filter: { _id: node.id },
+            update: { $set: { parentId, orderId: index + 1 } },
+          },
+        });
+
+        if (node.children?.length) {              //Recurse into children, If this node has children, recursively call traverse with: node.children as the next set of nodes. node.id as the new parentId for those children
+          traverse(node.children, node.id);
+        }
+      });
+    };
+
+    traverse(tree);                              //Start the recursive traversal from the root level.
+    await CMSPage.bulkWrite(updates);            //Efficiently apply all update operations in one go to the database using MongoDB's bulkWrite. This is faster than updating documents one by one.
+
+    res.json({ message: "Order updated successfully" });  //Return a success message after all updates are complete.
+  } catch (err) {
+    logError("reorderCMSPages", err, req);
+    res.status(500).json({ message: "Reordering failed" });
+  }
+};
+
 module.exports = {
   getAllPages,
   getPageById,
@@ -406,6 +484,8 @@ module.exports = {
   togglePageStatus,
   getPagesForDropdown,
   serveFile,
+  getPagesByMenuType,
+  reorderCMSPages,
 };
 
 // for line no. 361 & 362 -> fileStream is reading the file in chunks.res (the response object) is a writable stream (i.e., it sends data to the browser)&.pipe() sends chunks of data from the file stream directly to the response stream, without loading the entire file into memory.

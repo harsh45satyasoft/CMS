@@ -14,9 +14,13 @@ import AllPages from "./components/Pages/AllPages";
 import AddPage from "./components/Pages/AddPage";
 import EditPage from "./components/Pages/EditPage";
 import AllMenuTypes from "./components/MenuTypes/AllMenuTypes";
+import ReorderPages from "./components/Pages/ReorderPages";
 
-const Layout = ({ children }) => {
-  return (
+// DnD Provider setup
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+
+const Layout = ({ children }) => (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -24,78 +28,88 @@ const Layout = ({ children }) => {
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
-  );
-};
+);
 
 const App = () => {
   return (
     <AppProvider>
-      <Router>
-        <div className="App">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <DndProvider backend={HTML5Backend}>
+        <Router>
+          <div className="App">
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Dashboard Route */}
-            <Route
-              path="/dashboard"
-              element={
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              }
-            />
+              {/* Dashboard Route */}
+              <Route
+                path="/dashboard"
+                element={
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                }
+              />
 
-            {/* CMS Pages Routes */}
-            <Route
-              path="/cms/pages"
-              element={
-                <Layout>
-                  <AllPages />
-                </Layout>
-              }
-            />
-            <Route
-              path="/cms/pages/add"
-              element={
-                <Layout>
-                  <AddPage />
-                </Layout>
-              }
-            />
-            <Route
-              path="/cms/pages/edit/:id"
-              element={
-                <Layout>
-                  <EditPage />
-                </Layout>
-              }
-            />
+              {/* CMS Pages Routes */}
+              <Route
+                path="/cms/pages"
+                element={
+                  <Layout>
+                    <AllPages />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/cms/pages/add"
+                element={
+                  <Layout>
+                    <AddPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/cms/pages/edit/:id"
+                element={
+                  <Layout>
+                    <EditPage />
+                  </Layout>
+                }
+              />
 
-            {/* Menu Types Routes */}
-            <Route
-              path="/menu-types"
-              element={
-                <Layout>
-                  <AllMenuTypes />
-                </Layout>
-              }
-            />
+              <Route
+                path="/cms/pages/reorder"
+                element={
+                  <Layout>
+                    <ReorderPages />
+                  </Layout>
+                }
+              />
 
-            {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: "#363636",
-                color: "#fff",
-              },
-            }}
-          />
-        </div>
-      </Router>
+              {/* Menu Types Routes */}
+              <Route
+                path="/menu-types"
+                element={
+                  <Layout>
+                    <AllMenuTypes />
+                  </Layout>
+                }
+              />
+
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: "#363636",
+                  color: "#fff",
+                },
+              }}
+            />
+          </div>
+        </Router>
+      </DndProvider>
     </AppProvider>
   );
 };

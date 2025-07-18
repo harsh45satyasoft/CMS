@@ -9,6 +9,8 @@ const {
   togglePageStatus,
   getPagesForDropdown,
   serveFile,
+  getPagesByMenuType,
+  reorderCMSPages,
 } = require("../controllers/cmsPageController");
 const { upload, handleMulterError } = require("../middleware/fileUpload");
 
@@ -88,6 +90,8 @@ const pageValidation = [
 router.get("/", getAllPages);
 router.get("/dropdown", getPagesForDropdown);
 router.get("/file/:id", serveFile); // New route for serving files
+router.get("/by-menu-type/:menuTypeId", getPagesByMenuType);
+router.post("/reorder", reorderCMSPages);
 router.get("/:id", getPageById);
 router.post(
   "/",

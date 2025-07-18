@@ -34,6 +34,11 @@ const Sidebar = () => {
           icon: Plus,
           path: "/cms/pages/add",
         },
+        {
+          title: "Reorder Pages", // ✅ New menu item here
+          icon: Menu,
+          path: "/cms/pages/reorder",
+        },
       ],
     },
     {

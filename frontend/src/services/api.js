@@ -44,7 +44,7 @@ export const menuTypeAPI = {
 
 // CMS Pages API
 export const cmsPageAPI = {
-  getAll: (params = {}) => api.get("/cms-pages", { params }),     //getAll is a method, It accepts an optional parameter params, which defaults to an empty object {}. It makes a GET request to the /cms-pages endpoint. If params are provided, they will be sent as query parameters in the URL(getAll({ page: 2, limit: 10 }); ).
+  getAll: (params = {}) => api.get("/cms-pages", { params }), //getAll is a method, It accepts an optional parameter params, which defaults to an empty object {}. It makes a GET request to the /cms-pages endpoint. If params are provided, they will be sent as query parameters in the URL(getAll({ page: 2, limit: 10 }); ).
   getById: (id) => api.get(`/cms-pages/${id}`),
   create: (data) => api.post("/cms-pages", data),
   // New method for creating with file upload
@@ -70,9 +70,14 @@ export const cmsPageAPI = {
   // New method for downloading files
   downloadFile: (id) => {
     return api.get(`/cms-pages/file/${id}`, {
-      responseType: "blob",                    //responseType: "blob" tells Axios to treat the response as binary data (Blob), essential for files.
-    });                                        //Return: A Promise resolving to the raw file blob (you’ll need to handle saving/displaying it on the client).
+      responseType: "blob",                  //responseType: "blob" tells Axios to treat the response as binary data (Blob), essential for files.
+    });                                      //Return: A Promise resolving to the raw file blob (you’ll need to handle saving/displaying it on the client).
   },
+  
+  getTreeByMenuType: (menuTypeId) =>
+    api.get(`/cms-pages/by-menu-type/${menuTypeId}`),
+
+  reorder: (tree) => api.post("/cms-pages/reorder", { tree }),
 };
 
 export default api;
