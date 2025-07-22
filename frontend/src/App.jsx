@@ -15,6 +15,9 @@ import AddPage from "./components/Pages/AddPage";
 import EditPage from "./components/Pages/EditPage";
 import AllMenuTypes from "./components/MenuTypes/AllMenuTypes";
 import ReorderPages from "./components/Pages/ReorderPages";
+import PublicLayout from "./components/Public/PublicLayout";
+import PublicHome from "./components/Public/PublicHome";
+import PublicPage from "./components/Public/PublicPage";
 
 // DnD Provider setup
 import { DndProvider } from "react-dnd";
@@ -94,6 +97,30 @@ const App = () => {
                 }
               />
 
+              {/* Public Website Routes */}
+              <Route
+                path="/"
+                element={
+                  <PublicLayout>
+                    <PublicHome />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/page/:slug"
+                element={
+                  <PublicLayout>
+                    <PublicPage />
+                  </PublicLayout>
+                }
+              />
+
+              {/* Redirect old routes to admin */}
+              <Route
+                path="/dashboard"
+                element={<Navigate to="/admin/dashboard" replace />}
+              />   
+                       
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>

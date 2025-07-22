@@ -86,6 +86,11 @@ export const cmsPageAPI = {
     }
     return await response.json();
   },
+  // New method to get page by slug
+  getBySlug: (slug) => api.get(`/cms-pages/slug/${slug}`),
+  
+  // New method to get published pages only
+  getPublished: (params = {}) => api.get("/cms-pages/published", { params }),
 };
 
 export default api;

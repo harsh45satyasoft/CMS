@@ -515,6 +515,87 @@ const getParentPages = async (req, res) => {
   }
 };
 
+// Get page by slug
+const getPageBySlug = async (req, res) => {
+  try {
+    const page = await CMSPage.findOne({ 
+      slug: req.params.slug, 
+      isEnabled: true 
+    })
+    .populate("menuType", "name")
+    .populate("parentId", "pageTitle");
+
+    if (!page) {
+      return res.status(404).json({
+        success: false,
+        message: "Page not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: page,
+    });
+  } catch (error) {
+    logError('getPageBySlug', error, req);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+};
+
+// Get only published pages
+const getPublishedPages = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      menuType = "",
+    } = req.query;
+
+    let query = { isEnabled: true }; // Only get enabled pages
+
+    if (search) {
+      query.$or = [
+        { pageTitle: { $regex: search, $options: "i" } },
+        { slug: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (menuType) {
+      query.menuType = menuType;
+    }
+
+    const pages = await CMSPage.find(query)
+      .populate("menuType", "name")
+      .populate("parentId", "pageTitle")
+      .sort({ orderId: 1, createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await CMSPage.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: pages,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total,
+        limit: parseInt(limit),
+      },
+    });
+  } catch (error) {
+    logError('getPublishedPages', error, req);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+}
+
 module.exports = {
   getAllPages,
   getPageById,
@@ -527,6 +608,8 @@ module.exports = {
   getPagesByMenuType,
   reorderCMSPages,
   getParentPages,
+  getPageBySlug,
+  getPublishedPages,
 };
 
 // for line no. 361 & 362 -> fileStream is reading the file in chunks.res (the response object) is a writable stream (i.e., it sends data to the browser)&.pipe() sends chunks of data from the file stream directly to the response stream, without loading the entire file into memory.

@@ -17,7 +17,7 @@ const Sidebar = () => {
       title: "Dashboard",
       icon: LayoutDashboard,
       path: "/dashboard",
-      disabled: true, // Make it active
+      disabled: false, // Make it active
     },
     {
       title: "Manage Pages",
