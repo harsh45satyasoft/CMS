@@ -11,6 +11,7 @@ const {
   serveFile,
   getPagesByMenuType,
   reorderCMSPages,
+  getParentPages,
 } = require("../controllers/cmsPageController");
 const { upload, handleMulterError } = require("../middleware/fileUpload");
 
@@ -91,6 +92,7 @@ router.get("/", getAllPages);
 router.get("/dropdown", getPagesForDropdown);
 router.get("/file/:id", serveFile); // New route for serving files
 router.get("/by-menu-type/:menuTypeId", getPagesByMenuType);
+router.get("/parent-pages/:menuTypeId", getParentPages);
 router.post("/reorder", reorderCMSPages);
 router.get("/:id", getPageById);
 router.post(

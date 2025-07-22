@@ -78,6 +78,14 @@ export const cmsPageAPI = {
     api.get(`/cms-pages/by-menu-type/${menuTypeId}`),
 
   reorder: (tree) => api.post("/cms-pages/reorder", { tree }),
+
+  getParentPages: async (menuTypeId) => {
+    const response = await fetch(`${API_BASE_URL}/cms-pages/parent-pages/${menuTypeId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch parent pages');
+    }
+    return await response.json();
+  },
 };
 
 export default api;

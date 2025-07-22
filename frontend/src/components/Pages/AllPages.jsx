@@ -14,11 +14,25 @@ const AllPages = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [pageToDelete, setPageToDelete] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [parentPages, setParentPages] = useState([]); // Store parent pages for dropdown
 
   useEffect(() => {
     fetchPages();
     fetchMenuTypes();
   }, [state.filters, state.pagination.current]);
+
+  // Fetch parent pages when menu type changes
+  useEffect(() => {
+    if (state.filters.menuType) {
+      fetchParentPages(state.filters.menuType);
+    } else {
+      setParentPages([]);
+      // Clear parent page filter if menu type is cleared
+      if (state.filters.parentPage) {
+        actions.setFilters({ parentPage: "" });
+      }
+    }
+  }, [state.filters.menuType]);
 
   const fetchPages = async () => {
     try {
@@ -28,6 +42,7 @@ const AllPages = () => {
         limit: state.pagination.limit,
         search: state.filters.search,
         menuType: state.filters.menuType,
+        parentPage: state.filters.parentPage, // Add parent page filter
         enabled: state.filters.enabled,
       };
 
@@ -49,6 +64,17 @@ const AllPages = () => {
     }
   };
 
+  // New function to fetch parent pages for selected menu type
+  const fetchParentPages = async (menuTypeId) => {
+    try {
+      const response = await cmsPageAPI.getParentPages(menuTypeId);
+      setParentPages(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch parent pages:", error);
+      setParentPages([]);
+    }
+  };
+
   const handleSearch = (e) => {
     const value = e.target.value;
     actions.setFilters({ search: value });
@@ -56,12 +82,25 @@ const AllPages = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    actions.setFilters({ [key]: value });
+    const newFilters = { [key]: value };
+
+    // If menu type is being changed, clear parent page filter
+    if (key === "menuType") {
+      newFilters.parentPage = "";
+    }
+
+    actions.setFilters(newFilters);
     actions.setPagination({ ...state.pagination, current: 1 });
   };
 
   const clearFilters = () => {
-    actions.setFilters({ search: "", menuType: "", enabled: "" });
+    actions.setFilters({
+      search: "",
+      menuType: "",
+      parentPage: "", // Clear parent page filter
+      enabled: "",
+    });
+    setParentPages([]); // Clear parent pages array
     actions.setPagination({ ...state.pagination, current: 1 });
   };
 
@@ -94,6 +133,11 @@ const AllPages = () => {
   const getMenuTypeName = (menuTypeId) => {
     const menuType = state.menuTypes.find((mt) => mt._id === menuTypeId);
     return menuType ? menuType.name : "Unknown";
+  };
+
+  const getParentPageName = (parentPageId) => {
+    const parentPage = parentPages.find((pp) => pp._id === parentPageId);
+    return parentPage ? parentPage.pageTitle : "Unknown";
   };
 
   const renderPagination = () => {
@@ -186,6 +230,31 @@ const AllPages = () => {
                 </select>
               </div>
 
+              {/* New Parent Page Filter */}
+              <div className="w-full md:w-48">
+                <select
+                  value={state.filters.parentPage || ""}
+                  onChange={(e) =>
+                    handleFilterChange("parentPage", e.target.value)
+                  }
+                  disabled={!state.filters.menuType}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {!state.filters.menuType
+                      ? "Select Menu Type First"
+                      : parentPages.length === 0
+                      ? "No Parent Pages"
+                      : "All Parent Pages"}
+                  </option>
+                  {parentPages.map((page) => (
+                    <option key={page._id} value={page._id}>
+                      {page.pageTitle}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="w-full md:w-32">
                 <select
                   value={state.filters.enabled}
@@ -206,6 +275,61 @@ const AllPages = () => {
             </>
           )}
         </div>
+
+        {/* Active Filters Display */}
+        {(state.filters.menuType ||
+          state.filters.parentPage ||
+          state.filters.search ||
+          state.filters.enabled) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="text-sm text-gray-600">Active filters:</span>
+            {state.filters.menuType && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Menu: {getMenuTypeName(state.filters.menuType)}
+                <button
+                  onClick={() => handleFilterChange("menuType", "")}
+                  className="ml-1 text-blue-600 hover:text-blue-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {state.filters.parentPage && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Parent: {getParentPageName(state.filters.parentPage)}
+                <button
+                  onClick={() => handleFilterChange("parentPage", "")}
+                  className="ml-1 text-green-600 hover:text-green-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {state.filters.search && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                Search: "{state.filters.search}"
+                <button
+                  onClick={() => handleFilterChange("search", "")}
+                  className="ml-1 text-yellow-600 hover:text-yellow-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {state.filters.enabled && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                Status:{" "}
+                {state.filters.enabled === "true" ? "Enabled" : "Disabled"}
+                <button
+                  onClick={() => handleFilterChange("enabled", "")}
+                  className="ml-1 text-purple-600 hover:text-purple-800"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Pages Table */}

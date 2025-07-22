@@ -23,6 +23,7 @@ const getAllPages = async (req, res) => {
       limit = 10,
       search = "",
       menuType = "",
+      parentPage = "",
       enabled = "",
     } = req.query;
 
@@ -39,6 +40,11 @@ const getAllPages = async (req, res) => {
     // Menu type filter
     if (menuType) {                             //If the user passes a menuType (like "Top Menu", "Footer", etc.), then we add it to our query
       query.menuType = menuType;
+    }
+
+    // Parent page filter - Add this block
+    if (parentPage) {                          //If the user passes a parentPage (like "Home", "About", etc.), then we add it to our query
+      query.parentId = parentPage;
     }
 
     // Enabled filter
@@ -475,6 +481,40 @@ const reorderCMSPages = async (req, res) => {
   }
 };
 
+// Get parent pages for a specific menu type (pages with no parentId)
+const getParentPages = async (req, res) => {
+  try {
+    const { menuTypeId } = req.params;
+
+    if (!menuTypeId) {
+      return res.status(400).json({
+        success: false,
+        message: "Menu type ID is required",
+      });
+    }
+
+    // Find pages that belong to this menu type and have no parent (parentId is null)
+    const parentPages = await CMSPage.find({ 
+      menuType: menuTypeId, 
+      parentId: null,
+      isEnabled: true  // Only show enabled parent pages
+    })
+    .select("_id pageTitle")  // Only return id and title
+    .sort({ pageTitle: 1 });  // Sort alphabetically
+
+    res.json({
+      success: true,
+      data: parentPages,
+    });
+  } catch (error) {
+    logError('getParentPages', error, req);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+};
+
 module.exports = {
   getAllPages,
   getPageById,
@@ -486,6 +526,7 @@ module.exports = {
   serveFile,
   getPagesByMenuType,
   reorderCMSPages,
+  getParentPages,
 };
 
 // for line no. 361 & 362 -> fileStream is reading the file in chunks.res (the response object) is a writable stream (i.e., it sends data to the browser)&.pipe() sends chunks of data from the file stream directly to the response stream, without loading the entire file into memory.
